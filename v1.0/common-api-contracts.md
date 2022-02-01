@@ -78,7 +78,7 @@ RPs should either return null or emit the property.
 Operations should only change the systemData properties if the change affects user-modifiable properties within the resource's JSON configuration. If a user-modifiable property changes, it should update the systemData values.
 
 #### Can I use a new *ByType value? ####
-RPs should only use *ByType values supported by the related enum in the [common types definition](azure-rest-api-specs/types.json at master · Azure/azure-rest-api-specs (github.com)). The currently supported *ByType values are User, Application, ManagedIdentity, and Key.
+RPs should only use *ByType values supported by the related enum in the [common types definition](https://github.com/Azure/azure-rest-api-specs/blob/main/specification/common-types/resource-management/v1/types.json). The currently supported *ByType values are User, Application, ManagedIdentity, and Key.
 
 #### Can I add systemData to my current API version? ####
 No. Adding systemData is a breaking change and should only be included as part of a new API version.
