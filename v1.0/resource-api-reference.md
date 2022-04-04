@@ -1,43 +1,43 @@
 # Resource API Reference
 
-- [Resource API Reference](#resource-api-reference) <br/>
-- [Arguments for CRUD on Resource](#arguments-for-crud-on-resource) <br/>
-- [Put Resource](#put-resource) <br/>
-- [Patch Resource](#patch-resource) <br/>
-- [Delete Resource](#delete-resource) <br/>
-- [Get Resource](#get-resource) <br/>
-- [Move Resource](#move-resource) <br/>
+- [Arguments for CRUD on Resources](#arguments-for-crud-on-resources)
+- [Put Resource](#put-resource)
+- [Patch Resource](#patch-resource)
+- [Delete Resource](#delete-resource)
+- [Get Resource](#get-resource)
+- [Pagination](#pagination)
+- [Move Resource](#move-resource)
 
-## Resource API Reference ##
+## Overview ##
+These are the APIs that are implemented by resource providers (a.k.a. RPs) when exposing resource types through Azure Resource Manager (a.k.a ARM).
 
-These are the APIs that are implemented by the resource provider. Below is the description of arguments that will be used in PUT, PATCH, DELETE and GET. 
+## Arguments for CRUD on Resources ##
 
-### Arguments for CRUD on Resource ###
 | Argument | Description |
 | --- | --- |
-| subscriptionId | The subscriptionId for the Azure user. |
-| resourceGroupName | The resource group name uniquely identifies the resource group within the user subscriptionId. The resource group name must be no longer than 90 characters long, and must be alphanumeric characters (Char.IsLetterOrDigit()) and &#39;-&#39;, &#39;\_&#39;, &#39;(&#39;, &#39;)&#39; and&#39;.&#39;.  Note that the name cannot end with &#39;.&#39; |
-| resourceProviderNamespace | The resource provider namespace can only be ASCII alphanumeric characters and the &quot;.&quot; character. |
-| resourceType | The type of the resource – the resource providers declare the resource types they support at the time of registering with Azure. The resourceType should follow the lowerCamelCase convention and be plural (e.g. virtualMachines, resourceGroups, jobCollections, virtualNetworks).  The resource type can only be ASCII alphanumeric characters. |
-| resourceName | The name of the resource. The name cannot include:   &#39;&lt;&#39;, &#39;&gt;&#39;, &#39;%&#39;, &#39;&amp;&#39;, &#39;:&#39;, &#39;\\&#39;, &#39;?&#39;, &#39;/&#39;, &#39;#&#39;, OR any control characters. The max length is 260 characters. All other characters are allowed. The RP is expected to be more restrictive and have its own validation. |
-| actionName | The action that is being performed on the resource (or a container that is inside the resource). |
-| api-version | Specifies the version of the protocol used to make this request.  Format must match YYYY-MM-DD. It can be followed by a  -preview or -alpha or -beta or -rc or -privatepreview to indicate the appropriate milestone. |
+| `subscriptionId` | The subscriptionId for the Azure user. |
+| `resourceGroupName` | The resource group name uniquely identifies the resource group within the user subscriptionId. The resource group name must be no longer than 90 characters long, and must be alphanumeric characters (Char.IsLetterOrDigit()) and &#39;-&#39;, &#39;\_&#39;, &#39;(&#39;, &#39;)&#39; and&#39;.&#39;.  Note that the name cannot end with &#39;.&#39; |
+| `resourceProviderNamespace` | The resource provider namespace can only be ASCII alphanumeric characters and the &quot;.&quot; character. |
+| `resourceType` | The type of the resource – the resource providers declare the resource types they support at the time of registering with Azure. The resourceType should follow the lowerCamelCase convention and be plural (e.g. virtualMachines, resourceGroups, jobCollections, virtualNetworks).  The resource type can only be ASCII alphanumeric characters. |
+| `resourceName` | The name of the resource. The name cannot include:   &#39;&lt;&#39;, &#39;&gt;&#39;, &#39;%&#39;, &#39;&amp;&#39;, &#39;:&#39;, &#39;\\&#39;, &#39;?&#39;, &#39;/&#39;, &#39;#&#39;, OR any control characters. The max length is 260 characters. All other characters are allowed. The RP may be more restrictive and have its own validation. |
+| `actionName` | The action that is being performed on the resource (or a container that is inside the resource). |
+| `api-version` | Specifies the version of the protocol used to make this request.  Format must match YYYY-MM-DD. It can be followed by a  -preview or -alpha or -beta or -rc or -privatepreview to indicate the appropriate milestone. |
 
-### Put Resource ###
+## Put Resource ##
 
 Creates or updates a resource belonging to a resource group. Resource types can be nested and, if so, must follow the Resource API guidelines.
 
 ARM does not distinguish between creation and update. The resource provider should consult its datastore if a distinction is necessary. However, a PUT should always be allowed to overwrite an existing resource.
 
-#### Request ####
+### Request ###
 
 | Method | Request URI |
 | --- | --- |
-| PUT | https://&lt;endpoint&gt;/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}?api-version={api-version} |
+| PUT | `https://<endpoint>/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}?api-version={api-version}` |
 
 **Arguments**
 
-[Common Arguments](#arguments-for-crud-on-resource).
+[Common Arguments](#arguments-for-crud-on-resources).
 
 The resource group names and resource names should be matched case insensitively. That means, for example, if a user creates a resource in resource group &quot;rG1&quot;, and then calls a read operation on &quot;RG1&quot;, the same resource should be returned even though the casing differs.
 
@@ -47,73 +47,75 @@ The resource group name and resource name **MUST** come from the URL and not the
 
 **Request Body**
 
-    {
-      "location": "North US",
-      "extendedLocation": {
-        "type": "extended location type"
-        "name": "{value}"
-      },
-      "tags": {
-        "key": "value"
-      },
-      "sku" : {
-        "name" : "sku code, such as P3",
-        "capacity" : {number}
-      },
-      "plan" : {
-        "name": "User defined name of the 3rd Party Artifact",
-        "publisher": "Publisher of the 3rd Party Artifact ",
-        "product": "OfferID for the 3rd Party Artifact ",
-        "promotionCode": "Promotion Code",
-        "version" : "Version of the 3rd Party Artifact"
-      }
-      "kind" : "resource kind",
-      "managedBy": "resource-id"
-    }
-    
-| **Field** | Description |
+```json
+{
+  "location": "North US",
+  "extendedLocation": {
+    "type": "extended location type",
+    "name": "{value}"
+  },
+  "tags": {
+    "key": "value"
+  },
+  "sku" : {
+    "name" : "sku code, such as P3",
+    "capacity" : {number}
+  },
+  "plan" : {
+    "name": "User defined name of the 3rd Party Artifact",
+    "publisher": "Publisher of the 3rd Party Artifact ",
+    "product": "OfferID for the 3rd Party Artifact ",
+    "promotionCode": "Promotion Code",
+    "version" : "Version of the 3rd Party Artifact"
+  },
+  "kind" : "resource kind",
+  "managedBy": "resource-id"
+}
+```
+
+| Field | Description |
 | --- | --- |
-| **location** | Required, string. The location of the resource.  This would be one amongst the supported Azure Geo Regions registered by the RP:West US \| East US \| North Central US \| South Central US \| West Europe \| North Europe \| East Asia \| Southeast Asia \| East US 2 \| etc.  Resource Providers should ignore whitespace and capitalization when accepting geo regions. That is, &quot;West US,&quot; &quot;westus&quot; and &quot;West us&quot; should all be acceptable for the georegion. This will greatly simplify the pattern for CLI / Powershell / SDK clients. An RP should use this to create the resource in the appropriate geo-affinity region.  The geo region of a resource never changes after it is created. |
-|**extendedLocation**| Optional, json object. The extended locations property bag. This property is immutable once created. |
-|**extendedLocation.type**|Required, string. The type of extended locations. Acceptable values are "EdgeZone \| CustomLocation" |
-|**extendedLocation.name**|**CustomLocation**: Required, string. The fully qualified resourceId <br/> **EdgeZone**: Required, string. The name of the extended location.  The name cannot include:   &#39;&lt;&#39;, &#39;&gt;&#39;, &#39;%&#39;, &#39;&amp;&#39;, &#39;:&#39;, &#39;\\&#39;, &#39;?&#39;, &#39;/&#39; OR any control characters. The max length is 128 characters.  |
-| **tags** | A list of key value pairs that describe the resource. These tags can be used in viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource, and each tag must have a key no greater than 512 characters (and value no greater than 256 characters).  The resource provider is expected to store these tags with the resource.  For fields like &quot;label&quot; or &quot;description,&quot; it is recommended that the RP does not expose this as a separate property and instead leverage tags with these keys (clients will handle these &quot;recognized&quot; tags differently).  The tag name cannot include:   &#39;&lt;&#39;, &#39;&gt;&#39;, &#39;%&#39;, &#39;&amp;&#39;, &#39;\\\\&#39;, &#39;?&#39;, &#39;/&#39;, and any control characters. |
-| **properties** | Optional. Format not defined by ARM. Settings used to provision or configure the resource. **All Resource Provider specific properties must be placed within this**. The order of parameters in the request is unspecified. RPs should not rely on any particular ordering. |
-| **kind** | Optional, string. Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value. |
-| **sku.name** | Required (if sku is specified), string. The name of the SKU. This is typically a letter + number code, such as A0 or P3 |
-| **sku.tier** | Optional, string. The tier of this particular SKU. Typically one of: Free, Basic, Standard, Premium. This field is required to be implemented by the RP if the service has more than one tier, but is not required on a PUT. |
-| **sku.size** | Optional, string. When the name field is the combination of tier and some other value, this would be the standalone code.|
-| **sku.family** | Optional, string. If the service has different generations of hardware, for the same SKU, then that can be captured here. |
-| **sku.capacity** | Optional, integer. If the SKU supports scale out/in then the capacity integer should be included. If scale out/in is not possible for the resource this may be omitted. |
-| **plan** | Optional, Complex Type. Format defined by Azure.Fixed set of fields that provide the purchase context for a 3rd Party Product that is made available in Azure through Data Market. E.g. 3rd Party VM images that can be used in the VM Resource Type. |
-| **plan.name** | Required (if plan is specified), string. A publisher defined name of the 3rd Party Artifact that is being procured. |
-| **plan.publisher** | Required (if plan is specified), string. The publisher of the 3 rd Party Artifact that is being bought. E.g. NewRelic |
-| **plan.product** | Required (if plan is specified), string. The 3rd Party artifact that is being procured. E.g. NewRelic. Product maps to the OfferID specified for the artifact at the time of Data Market onboarding. |
-| **plan.promotionCode** | Optional, string. A publisher provided promotion code as provisioned in Data Market for the said product/artifact. |
-| **plan.version** | Optional, string. The version of the desired product/artifact.  Ignored by commerce. |
-| **managedBy** |  Optional, string. Indicates if this resource is managed by another azure resource. If this is present, complete mode deployment will not delete the resource if it is removed from the template since it is managed by another resource. | 
+| `location` | Required, string. The location of the resource.  This would be one amongst the supported Azure Geo Regions registered by the RP:West US \| East US \| North Central US \| South Central US \| West Europe \| North Europe \| East Asia \| Southeast Asia \| East US 2 \| etc.  Resource Providers should ignore whitespace and capitalization when accepting geo regions. That is, &quot;West US,&quot; &quot;westus&quot; and &quot;West us&quot; should all be acceptable for the georegion. This will greatly simplify the pattern for CLI / Powershell / SDK clients. An RP should use this to create the resource in the appropriate geo-affinity region.  The geo region of a resource never changes after it is created. |
+|`extendedLocation`| Optional, json object. The extended locations property bag. This property is immutable once created. |
+|`extendedLocation.type`|Required, string. The type of extended locations. Acceptable values are "EdgeZone \| CustomLocation" |
+|`extendedLocation.name`|**CustomLocation**: Required, string. The fully qualified resourceId <br/> **EdgeZone**: Required, string. The name of the extended location.  The name cannot include:   &#39;&lt;&#39;, &#39;&gt;&#39;, &#39;%&#39;, &#39;&amp;&#39;, &#39;:&#39;, &#39;\\&#39;, &#39;?&#39;, &#39;/&#39; OR any control characters. The max length is 128 characters.  |
+| `tags` | A list of key value pairs that describe the resource. These tags can be used in viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource, and each tag must have a key no greater than 512 characters (and value no greater than 256 characters).  The resource provider is expected to store these tags with the resource.  For fields like &quot;label&quot; or &quot;description,&quot; it is recommended that the RP does not expose this as a separate property and instead leverage tags with these keys (clients will handle these &quot;recognized&quot; tags differently).  The tag name cannot include:   &#39;&lt;&#39;, &#39;&gt;&#39;, &#39;%&#39;, &#39;&amp;&#39;, &#39;\\\\&#39;, &#39;?&#39;, &#39;/&#39;, and any control characters. |
+| `properties` | Optional. Format not defined by ARM. Settings used to provision or configure the resource. **All Resource Provider specific properties must be placed within this**. The order of parameters in the request is unspecified. RPs should not rely on any particular ordering. |
+| `kind` | Optional, string. Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value. |
+| `sku.name` | Required (if sku is specified), string. The name of the SKU. This is typically a letter + number code, such as A0 or P3 |
+| `sku.tier` | Optional, string. The tier of this particular SKU. Typically one of: Free, Basic, Standard, Premium. This field is required to be implemented by the RP if the service has more than one tier, but is not required on a PUT. |
+| `sku.size` | Optional, string. When the name field is the combination of tier and some other value, this would be the standalone code.|
+| `sku.family` | Optional, string. If the service has different generations of hardware, for the same SKU, then that can be captured here. |
+| `sku.capacity` | Optional, integer. If the SKU supports scale out/in then the capacity integer should be included. If scale out/in is not possible for the resource this may be omitted. |
+| `plan` | Optional, Complex Type. Format defined by Azure.Fixed set of fields that provide the purchase context for a 3rd Party Product that is made available in Azure through Data Market. E.g. 3rd Party VM images that can be used in the VM Resource Type. |
+| `plan.name` | Required (if plan is specified), string. A publisher defined name of the 3rd Party Artifact that is being procured. |
+| `plan.publisher` | Required (if plan is specified), string. The publisher of the 3 rd Party Artifact that is being bought. E.g. NewRelic |
+| `plan.product` | Required (if plan is specified), string. The 3rd Party artifact that is being procured. E.g. NewRelic. Product maps to the OfferID specified for the artifact at the time of Data Market onboarding. |
+| `plan.promotionCode` | Optional, string. A publisher provided promotion code as provisioned in Data Market for the said product/artifact. |
+| `plan.version` | Optional, string. The version of the desired product/artifact.  Ignored by commerce. |
+| `managedBy` |  Optional, string. Indicates if this resource is managed by another azure resource. If this is present, complete mode deployment will not delete the resource if it is removed from the template since it is managed by another resource. | 
 
-##### Representing SKUs ####
+### Representing SKUs ###
 
-The "sku" property should be used for defining the billing information of your resource (e.g. basic vs. standard). Any field that can have a billing impact for 1st party _services_ should be in the "sku" object. Note that 1st
+The `sku` property should be used for defining the billing information of your resource (e.g. basic vs. standard). Any field that can have a billing impact for 1st party _services_ should be in the `sku` object. Note that 1st
 party _artifacts_ are addressed via the plan entity.
 
-The "sku" property is a complex type because it allows differentiation based on tiers (e.g. premium, free), families (e.g. generates of hardware) and other important details. The "sku" value should be **outside** the properties envelope.
+The `sku` property is a complex type because it allows differentiation based on tiers (e.g. premium, free), families (e.g. generates of hardware) and other important details. The `sku` value should be **outside** the properties envelope.
 
-##### Purchasing 3rd Party Artifacts #####
+### Purchasing 3rd Party Artifacts ###
 
 The Plan entity **MUST** be used for establishing the purchase context of any 3rd Party Artifact that is made available through the Azure Data Market. These artifacts can be 3rd Party Extension Resources like MySql Databases or an artifacts used in first party resources like images deployed in Azure Virtual Machines. Additionally, the plan entity can be used for procuring 1st
 party artifacts which incur usage/billing in addition to the cost of the service (e.g. VMs running SQL/BizTalk/etc).
 
+### Resource Provider and Type Names best-practices ###
 
-#### Resource Provider and Type Names best-practices ####
 While we do not have any stringent naming conventions there are reserved words for platform constructs such as deployments, location, region, availability, provider, application, resource, graph, policy, migrate, templates, catalog, gallery, and portal which cannot be used. The API review board is also required to review and sign off on all names to help avoid service name confusion of existing and upcoming services. We also recommend all names following the [Microsoft wide API guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#17-naming-guidelines) on naming and also have your names reviewed with the [naming consul](https://microsoft.sharepoint.com/sites/globalreadiness/SitePages/NewNameReview.aspx) if your service is going to be a public service.
 
-##### Resource Request Properties Envelope #####
+### Resource Request Properties Envelope ###
 
 Every resource can have a section with properties. These are the settings that describe or configure the resource. For example, the configuration for a job collection can be seen below:
 
-PUT https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Scheduler/jobCollections/{jobCollectionName}?api-version=2016-01-01
+PUT `https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Scheduler/jobCollections/{jobCollectionName}?api-version=2016-01-01`
 
 ```json
 {
@@ -141,13 +143,13 @@ PUT https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{
 
 Since different types of resources have different settings, the contents of this field are left under the control of the resource provider and ARM will never be made aware of these fields. However, in the case of ARM templates, the template execution engine will replace all parameters and expressions \*before\* passing the instantiated object to the RPs.
 
- It is important to note that, properties already defined outside of "properties" envelope **MUST** not be repeated inside "properties" in any form. Example of such properties is 'name', 'tags', 'location', etc. 
+ It is important to note that, properties already defined outside of "properties" envelope **MUST** not be repeated inside "properties" in any form. Example of such properties is `name`, `tags`, `location`, etc...
 
 The settings can range from simple key-value pairs to complex nested structures. The user specifies these settings and Azure will pass them to the resource provider unmodified.
 
 **NOTE** For proxy only resources, location and tags are not applicable in the request body.
 
-#### Response ####
+### Response ###
 
 The response includes an HTTP status code, a set of response headers, and a response body.
 
@@ -173,19 +175,19 @@ Headers common to all responses.
 
 The response body should contain _at least_ the original request that was PUT (and any other properties that would be returned in a GET, such as provisioningState, name, Id and type).
 
-### Patch Resource ###
+## Patch Resource ##
 
 Updates a resource belonging to a resource group. ARM requires RPs to support PATCH for updating tags for a resource.
 
-#### Request ####
+### Request ###
 
 | Method | Request URI |
 | --- | --- |
-| PATCH | https://&lt;endpoint&gt;/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}? api-version={api-version} |
+| PATCH | `https://<endpoint>/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}?api-version={api-version}` |
 
 **Arguments**
 
-[Common Arguments](#arguments-for-crud-on-resource).
+[Common Arguments](#arguments-for-crud-on-resources).
 
 **Request Body**
 
@@ -197,7 +199,7 @@ An example of a common pattern is to PATCH an update to the Tags section of a re
 
 The behavior for patching of the fields inside the properties envelope should follow JSON merge-patch ([RFC 7396](https://tools.ietf.org/html/rfc7396)).
 
-#### Response ####
+### Response ###
 
 The response includes an HTTP status code, a set of response headers, and a response body.
 
@@ -215,32 +217,34 @@ Headers common to all responses.
 
 The response body will contain the updated resource (using the existing value + the request in the PATCH) per the Azure REST guidelines [here](https://github.com/Microsoft/api-guidelines/blob/master/Guidelines.md).
 
-##### Representing SKUs #####
+### Representing SKUs ###
 
 In addition, the PATCH operation must be supported for the SKU property to support scaling. For example, the following operation should update the SKU of the resource to be Free and not affect any of the other properties of the resource:
 
 **Request Body**
 
-    {
-      "sku": {
-        "name": "F0",
-        "capacity": 1
-      }
-    }
+```json
+{
+  "sku": {
+    "name": "F0",
+    "capacity": 1
+  }
+}
+```
 
-### Delete Resource ###
+## Delete Resource ##
 
 Deletes a resource from the resource group.
 
-#### Request ####
+### Request ###
 
 | Method | Request URI |
 | --- | --- |
-| DELETE | https://&lt;endpoint&gt;/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}?api-version={api-version} |
+| DELETE | `https://<endpoint>/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}?api-version={api-version}` |
 
 **Arguments**
 
-[Common Arguments](#arguments-for-crud-on-resource).
+[Common Arguments](#arguments-for-crud-on-resources).
 
 **Request Headers**
 
@@ -250,7 +254,7 @@ Only headers common to all requests.
 
 Empty
 
-#### Response ####
+### Response ###
 
 The response includes an HTTP status code, a set of response headers, and a response body.
 
@@ -270,27 +274,27 @@ Only headers common to all responses.
 
 Empty
 
-### Get Resource ###
+## Get Resource ##
 
-Returns a resource belonging to a resource group. Resource types can be nested and, if so, must follow the REST guidelines (full details in [the nested resource type section](https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#nested-resources)). Below are the three different request URIs to get resource or resource collection under a resource group or subscription. 
+Returns a resource belonging to a resource group. Resource types can be nested and, if so, must follow the REST guidelines (full details in [the nested resource type section](https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#nested-resources)). Below are the three different request URIs to get an individual resource or a resource collection under a resource group or subscription. A top-level (i.e. not nested) tracked resource must implement all three GET APIs outlined in this section.
 
-#### Request - Get a specific resource under resource group ####
-
-| Method | Request URI |
-| --- | --- |
-| GET | https://&lt;endpoint&gt;/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}?api-version={api-version} |
-
-#### Request - Get resource collection under resource group ####
-
-Returns all the resources of a particular type belonging to a resource group. This is *not\* required for nested resource types (e.g. the SQL Azure databases underneath a SQL Azure server).
+### Request - Get a specific resource under resource group ###
 
 | Method | Request URI |
 | --- | --- |
-| GET | https://&lt;endpoint&gt;/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}?api-version={api-version} |
+| GET | `https://<endpoint>/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}?api-version={api-version}` |
 
-#### Request - Get resource collection under subscription ####
+### Request - Get resource collection under resource group ###
 
-Returns all the resources of a particular type belonging to a _subscription_. This is **\*not\*** required for nested resource types (e.g. the SQL Azure databases underneath a SQL Azure server).
+Returns all the resources of a particular type belonging to a resource group. This is **not** required for nested resource types (e.g. the SQL Azure databases underneath a SQL Azure server).
+
+| Method | Request URI |
+| --- | --- |
+| GET | `https://<endpoint>/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}?api-version={api-version}` |
+
+### Request - Get resource collection under subscription ###
+
+Returns all the resources of a particular type belonging to a _subscription_. This is **not** required for nested resource types (e.g. the SQL Azure databases underneath a SQL Azure server).
 
 ARM will query each regional endpoint that has at least one resource for the subscription and aggregate the responses for the client.
 
@@ -298,11 +302,11 @@ This allows the resource provider to remain regional and still support this quer
 
 | Method | Request URI |
 | --- | --- |
-| GET | https://&lt;endpoint&gt;/subscriptions/{subscriptionId}/providers/{resourceProviderNamespace}/{resourceType}?api-version={api-version} |
+| GET | `https://<endpoint>/subscriptions/{subscriptionId}/providers/{resourceProviderNamespace}/{resourceType}?api-version={api-version}` |
 
 **Arguments**
 
-[Common Arguments](#arguments-for-crud-on-resource).
+[Common Arguments](#arguments-for-crud-on-resources).
 
 **Request Headers**
 
@@ -312,7 +316,7 @@ Only headers common to all requests.
 
 Empty
 
-#### Response ####
+### Response ###
 
 The response includes an HTTP status code, a set of response headers, and a response body.
 
@@ -320,15 +324,15 @@ The response includes an HTTP status code, a set of response headers, and a resp
 
 The resource provider should return 200 (OK) to indicate that the operation completed successfully.
 
-If the resource does not exist, 404 (NotFound) should be returned. 
+If the resource does not exist, 404 (NotFound) should be returned.
 
 If the resource group does not exist, 404 (NotFound) will be returned by the proxy \*without\* reaching the resource provider.
 
-If the subscription does not exist, 404 (NotFound) will be returned by the proxy \*without\* reaching the resource provider. If the subscription is not registered with the resource provider, it should return a 404 (NotFound) or an empty collection. 
+If the subscription does not exist, 404 (NotFound) will be returned by the proxy \*without\* reaching the resource provider. If the subscription is not registered with the resource provider, it should return a 404 (NotFound) or an empty collection.
 
 If there are no types and all parent entities (resource group and subscription) exist, it should return an empty collection. It must not return a 5xx status code or 403 for this specific condition.
 
-For other errors use the appropriate HTTP error code (e.g. 500 for Internal server error). 
+For other errors use the appropriate HTTP error code (e.g. 500 for Internal server error).
 
 **Response Headers**
 
@@ -336,76 +340,81 @@ Headers common to all responses.
 
 **Response Body**
 
-    {
-      "id": "/subscriptions/{id}/resourceGroups/{group}/providers/{rpns}/{type}/{name}",
-      "name": "{name}",
-      "type": "{resourceProviderNamespace}/{resourceType}",
-      "location": "North US",
-      "tags": {
-        "key1": "value 1",
-        "key2": "value 2"
-      },
-      "kind": "resource kind",
-      "properties": {
-        "comment": "Resource defined structure"
-      }
-    }
+```json
+{
+  "id": "/subscriptions/{id}/resourceGroups/{group}/providers/{rpns}/{type}/{name}",
+  "name": "{name}",
+  "type": "{resourceProviderNamespace}/{resourceType}",
+  "location": "North US",
+  "tags": {
+    "key1": "value 1",
+    "key2": "value 2"
+  },
+  "kind": "resource kind",
+  "properties": {
+    "comment": "Resource defined structure"
+  }
+}
+```
 
-For a detailed explanation of each field in the response body, please refer to the request body description in the PUT resource section. The only GET specific properties are "name," "type" and "id."
+For a detailed explanation of each field in the response body, please refer to the request body description in the PUT resource section. The only GET specific properties are `name`, `type` and `id`.
 
 | Field | Description |
 | --- | --- |
-| id | Required, stringThe id field should be the URL (excluding the hostname/scheme and api version) for the entity. It should not be URL encoded. E.g. /subscriptions/{id}/resourceGroups/{rgName}/providers/{rpns}/{typeName}/{name} This field is important to the platform – it is used as the identifier for references on other objects (e.g. if a virtual machine &quot;points&quot; to a vNet, it uses the id of the vNet as its reference), displaying links / references between resources in the portal, Authorization checks / validation, auditing / operational logs, etc. |
-| name | Required, stringThe name does not need to be URL encoded or match exactly what is seen in the URL. It should be the name of the resource and is not expected to be globally unique (only unique for that particular collection / type in the resource group). |
-| type | Required, stringThe type does not need to be URL encoded or match exactly what is seen in the URL.  It should include the resource provider namespace \*and\* the type of the entity. Examples include Microsoft.Web/Sites. |
-| etag | Optional, stringThe Etag field is \*not\* required. If it is provided in the response body, it must also be provided as a header per [the normal ETag convention](http://www.rfc-editor.org/rfc/rfc2616.txt).  Entity tags are used for comparing two or more entities from the same requested resource. HTTP/1.1 uses entity tags in the ETag (section 14.19), If-Match (section 14.24), If-None-Match (section 14.26), and If-Range (section 14.27) header fields. The full guidance can be found in the [Addendum](Addendum.md#etags-for-resources). |
-| kind | Optional.  String.Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value. |
+| `id` | Required, stringThe id field should be the URL (excluding the hostname/scheme and api version) for the entity. It should not be URL encoded. E.g. /subscriptions/{id}/resourceGroups/{rgName}/providers/{rpns}/{typeName}/{name} This field is important to the platform – it is used as the identifier for references on other objects (e.g. if a virtual machine &quot;points&quot; to a vNet, it uses the id of the vNet as its reference), displaying links / references between resources in the portal, Authorization checks / validation, auditing / operational logs, etc. |
+| `name` | Required, stringThe name does not need to be URL encoded or match exactly what is seen in the URL. It should be the name of the resource and is not expected to be globally unique (only unique for that particular collection / type in the resource group). |
+| `type` | Required, stringThe type does not need to be URL encoded or match exactly what is seen in the URL.  It should include the resource provider namespace \*and\* the type of the entity. Examples include Microsoft.Web/Sites. |
+| `etag` | Optional, stringThe Etag field is \*not\* required. If it is provided in the response body, it must also be provided as a header per [the normal ETag convention](http://www.rfc-editor.org/rfc/rfc2616.txt).  Entity tags are used for comparing two or more entities from the same requested resource. HTTP/1.1 uses entity tags in the ETag (section 14.19), If-Match (section 14.24), If-None-Match (section 14.26), and If-Range (section 14.27) header fields. The full guidance can be found in the [Addendum](Addendum.md#etags-for-resources). |
+| `kind` | Optional.  String.Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value. |
 
-**Paging Response Body**
+## Pagination ##
 
-The paging approach required by ARM is server side paging, as described below.
+The paging approach required by ARM is server side paging, as described below. All GET requests that return multiple resources must follow this pattern.
 
+```json
+{
+  "value": [
     {
-      "value": [
-        {
-          "id": "{url to resource 1}",
-          "name": "Name1",
-          "type": "{resourceProviderNamespace}/{resourceType}",
-          "location": "North US"
-          "properties": { 
-            "comment: "Resource defined structure" 
-          },
-          "kind" : "resource kind"
-        },
-        {
-          "id": "{url to resource 2}",
-          "name": "Name2",
-          "type": "{resourceProviderNamespace}/{resourceType}",
-          "location": "North US",
-          "properties": { 
-            "comment: "Resource defined structure" 
-           },
-          "kind" : "resource kind"
+      "id": "{url to resource 1}",
+      "name": "Name1",
+      "type": "{resourceProviderNamespace}/{resourceType}",
+      "location": "North US",
+      "kind" : "resource kind",
+      "properties": { 
+        "comment": "Resource defined structure" 
+      }
+    },
+    {
+      "id": "{url to resource 2}",
+      "name": "Name2",
+      "type": "{resourceProviderNamespace}/{resourceType}",
+      "location": "North US",
+      "kind" : "resource kind",
+      "properties": { 
+        "comment": "Resource defined structure" 
         }
-      ],
-      "nextLink": "{refererHeaderUrl}?$skipToken={opaqueString}"
     }
+  ],
+  "nextLink": "{refererHeaderUrl}?$skipToken={opaqueString}"
+}
+```
 
-The nextLink field is expected to point to the URL the client should use to fetch the next page (per server side paging). This matches the OData guidelines for paged responses [here](http://docs.oasis-open.org/odata/odata-json-format/v4.0/cos01/odata-json-format-v4.0-cos01.html#_Toc372793055). If a resource provider does not support paging, it should return the same body (JSON object with &quot;value&quot; property) but omit nextLink entirely (or set to null, \*not\* empty string) for future compatibility.
+The `nextLink` field is expected to point to the URL the client should use to fetch the next page (per server side paging). This matches the OData guidelines for paged responses [here](http://docs.oasis-open.org/odata/odata-json-format/v4.0/cos01/odata-json-format-v4.0-cos01.html#_Toc372793055). If a resource provider does not support paging, it should return the same body (JSON object with `value` property) but omit `nextLink` entirely (or set to null, **not** empty string) for future compatibility.
 
-The nextLink should be implemented using following query parameters:
+The `nextLink` should be implemented using following query parameters:
 
-- $skipToken: opaque token that allows the resource provider to skip resources already enumerated. This value is defined and returned by the RP after first request via nextLink.
-- $top: the optional client query parameter which defines the maximum number of records to be returned by the server.
+- `$skipToken`: opaque token that allows the resource provider to skip resources already enumerated. This value is defined and returned by the RP after first request via nextLink.
+- `$top`: the optional client query parameter which defines the maximum number of records to be returned by the server.
 
 Implementation details:
 
-- The refererHeaderUrl used to format the nextLink is the URI provided by ARM in the referer header, and not the request URI. See [here](common-api-details.md#proxy-request-header-modifications) for more information on the referer header.
-- NextLink may include all the query parameters (specifically OData $filter) used by the client in the first query.
-- Server may return less records than requested with nextLink. Returning zero records with NextLink is an acceptable response.
-- Clients must fetch records until the nextLink is not returned back / null. Clients should never rely on number of returned records to determinate if pagination is completed.
+- The `refererHeaderUrl` used to format the nextLink is the URI provided by ARM in the referer header, and not the request URI. See [here](common-api-details.md#proxy-request-header-modifications) for more information on the referer header.
+- `nextLink` may include all the query parameters (specifically OData `$filter`) used by the client in the first query.
+- Server may return less records than requested with nextLink. Returning zero records with `nextLink` is an acceptable response.
+- Clients must fetch records until the `nextLink` is not returned or is null. Clients should never rely on number of returned records to determinate if pagination is completed.
+- The `$skipToken` present in the `nextLink` MUST only be usable within the original scope that it was used. For example, a user should not be able to take the `$skipToken` from another tenant or subscription's `nextLink` and use it in their tenant or subscription and be able to retrieve data from the original tenant/subscription.
 
-### Move Resource ###
+## Move Resource ##
 
 Moves resources from the resource group to a target resource group. The target resource group **may** be in a different subscription.
 
@@ -413,16 +422,15 @@ The resource provider may choose to enforce its own set of restrictions – for 
 
 As some examples: (1) the website RP may require that all websites belonging to the same server farm move across resource groups together (along with the server farm); (2) the compute RP may require that all virtual machines belonging to the same availability set move across resource groups together (along with the availability set).
 
-#### Request ####
+### Request ###
 
 | Method | Request URI |
 | --- | --- |
-| POST | https://&lt;endpoint&gt;/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/moveResources?api-version={api-version} |
+| POST | `https://<endpoint>/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/moveResources?api-version={api-version}` |
 
 **Arguments**
 
-[Common Arguments](#arguments-for-crud-on-resource).
-
+[Common Arguments](#arguments-for-crud-on-resources).
 
 **Request Headers**
 
@@ -430,20 +438,22 @@ See common client request headers.
 
 **Request Body**
 
-    {
-      "targetResourceGroup": "/subscriptions/{targetId}/resourceGroups/{targetName}",
-      "resources": [
-        "/subscriptions/{id}/resourceGroups/{source}/providers/{namespace}/{type}/{name}",
-        "/subscriptions/{id}/resourceGroups/{source}/providers/{namespace}/{type}/{name}"
-      ]
-    }
+```json
+{
+  "targetResourceGroup": "/subscriptions/{targetId}/resourceGroups/{targetName}",
+  "resources": [
+    "/subscriptions/{id}/resourceGroups/{source}/providers/{namespace}/{type}/{name}",
+    "/subscriptions/{id}/resourceGroups/{source}/providers/{namespace}/{type}/{name}"
+  ]
+}
+```
 
-| Element name | Description |
+| Field | Description |
 | --- | --- |
-| targetResourceGroup | **Required** , string.The target resource group id to move the resources to.  The target resource group cannot be the same as the current (source) resource group. If the subscriptionId is different than the current resource group&#39;s subscriptionId, then additional checks will be performed in the frontdoor. |
-| resources | **Required** , array of resource ids.The collection of resources to move to the target resource group.  The resources must be from the current resource group from the request URL. At most 800 resources can be moved with a single request. The resources can span several different resource providers and resource types. |
+| `targetResourceGroup` | **Required** , string.The target resource group id to move the resources to.  The target resource group cannot be the same as the current (source) resource group. If the subscriptionId is different than the current resource group&#39;s subscriptionId, then additional checks will be performed in the frontdoor. |
+| `resources` | **Required** , array of resource ids.The collection of resources to move to the target resource group.  The resources must be from the current resource group from the request URL. At most 800 resources can be moved with a single request. The resources can span several different resource providers and resource types. |
 
-#### Response ####
+### Response ###
 
 The response includes an HTTP status code, a set of response headers, and a response body.
 
