@@ -1,6 +1,6 @@
 # Asynchronous API Reference
 
-- [Asynchronous Operations](#asynchronous-operations) <br/>
+- [Asynchronous Operations](#asynchronous-operations) 
 - [Creating or Updating Resources Asynchronously](#creating-or-updating-resources-asynchronously)
 - [Delete Resource Asynchronously](#delete-resource-asynchronously)
 - [Call Action POST Asynchronously](#call-action-post-asynchronously)
@@ -9,7 +9,7 @@
 - [Azure-AsyncOperation Resource format](#azure-asyncoperation-resource-format)
 - [Long running operations running more than a day](#long-running-operations-running-more-than-a-day)
 
-## Asynchronous Operations ##
+## Asynchronous Operations
 
 Some REST operations can take a long time to complete. Although REST is not supposed to be stateful, some operations are made asynchronous while waiting for the state machine to create the resources, and will reply before the operation on resources are completed. For such operations, the following guidance applies.
 
@@ -21,9 +21,9 @@ Some REST operations can take a long time to complete. Although REST is not supp
     * Location URI should return 202 Accepted with no response body while operation is in progress.
     * Azure-AsyncOperation URI returns 200 and status of the operation is present in the response payload. The response should match the RPC contract.
 
-## Creating or Updating Resources Asynchronously ##
+## Creating or Updating Resources Asynchronously
 
-### Creating/Updating using PUT ###
+### Creating/Updating using PUT
 
 The API flow for PUT should be to:
 
@@ -34,12 +34,9 @@ The API flow for PUT should be to:
 5. After the provisioning completes, the provisioningState property should transition to one of the terminal states. If an update to existing resource properties failed then those properties should be reverted to their previous state if that best represents the end state of the resource after the failed operation.
 6. The provisioningState property should be returned on all future GETs, even after it is complete, until some other operation (e.g. a DELETE or UPDATE) causes it to transition to a non-terminal state.
 
-<br/>
+Some of the resource provider's existing PUT APIs return 202 Accepted. Please note this is a old model. For PUT requests, 201 / 200 + ProvisioningState is the preferred model. For more details, refer to Microsoft API guidelines on [long running operations](https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#131-resource-based-long-running-operations-relo).
 
-  Some of the resource provider's existing PUT APIs return 202 Accepted. Please note this is a old model. For PUT requests, 201 / 200 + ProvisioningState is the preferred model. For more details, refer Microsoft API guidelines on [long running operations](https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#131-resource-based-long-running-operations-relo).
-
-
-### Updating using PATCH ###
+### Updating using PATCH
 
 The API flow for PATCH on an existing resource should be to:
 
@@ -49,7 +46,7 @@ The API flow for PATCH on an existing resource should be to:
 4. If a provisioningState property is used for the resource, it **MUST** transition to a non-terminal state like &quot;Updating&quot;
 5. If the PATCH completes successfully, the URL that was returned in the Location header **MUST** now return what would have been a successful response if the API completed (e.g. a response body / header / status code).
 
-## Delete Resource Asynchronously ##
+## Delete Resource Asynchronously
 
 The API flow should be to:
 
@@ -59,7 +56,7 @@ The API flow should be to:
 4. If a provisioningState property is used for the resource, it **MUST** transition to a non-terminal state like &quot;Deleting&quot;
 5. If the DELETE completes successfully, the URL that was returned in the Location header **MUST** now return a 200 OK or 204 NoContent to indicate success and the resource **MUST** disappear.
 
-## Call Action POST Asynchronously ##
+## Call Action POST Asynchronously
 
 The API flow for POST {resourceUrl}/{action} should be:
 
@@ -68,7 +65,7 @@ The API flow for POST {resourceUrl}/{action} should be:
 3. **Optional:** The response headers may include an Azure-AsyncOperation header pointing to an Operation resource (as described [below](#azure-asyncoperation-resource-format)).
 4. If the POST completes successfully, the URL that was returned in the Location header **MUST** now return what would have been a successful response if the API completed (e.g. a response body / header / status code). It is acceptable for this to be a 200/204 NoContent if the action does not require a response (e.g. restarting a VM).
 
-## ProvisioningState property ##
+## ProvisioningState property
 
 The provisioningState property has only three terminal states: **Succeeded** , **Failed** and **Canceled**. If the resource returns no provisioningState, it is assumed to be **Succeeded**.
 
@@ -85,31 +82,34 @@ An example of the response body can be seen below:
 
 **Response Body**
 
-    {
-      "location": "North US",
-      "tags": {
-        "key1": "value 1",
-        "key2": "value 2"
-      },
-
-      "properties": {
-        "provisioningState": "Succeeded",
-        "comment": "Resource defined structure"
-      },
-    }
+```json
+{
+  "location": "Central US",
+  "type": "Microsoft.Contoso/widgets",
+  "id": "/subscriptions/<subscriptionId>/resourceGroups/myRg/providers/Microsoft.Contoso/widgets/myWidget",
+  "tags": {
+    "key1": "value 1",
+    "key2": "value 2"
+  },
+  "properties": {
+    "provisioningState": "Succeeded",
+    "comment": "Resource defined structure"
+  }
+}
+```
 
 If the user does a PUT with provisioningState (e.g. after doing a GET), the resource provider should treat the field as a normal readonly property.
 
 If the user provides a provisioningState matching the value \*on the server\*, the server should ignore it. If the user provides a provisioningState that does \*not\* match the value on the server, the resource provider should reject the call as a 400 BadRequest.
 
-## 202 Accepted and Location Headers ##
+## 202 Accepted and Location Headers
 
 The asynchronous operation APIs frequently use the 202 Accepted status code and Location headers to indicate progress. The flow is described below:
 
-1. Return HTTP code 202 (Accepted) with a Location header and, optionally, a Retry-After header. 
+1. Return HTTP code 202 (Accepted) with a Location header and, optionally, a Retry-After header.
     - The 202 Accepted should return no response body.
     - The URI in the location header should be a full absolute URI and a public facing URI.
-    - The URI host must be the same as the host in the referrer header. 
+    - The URI host must be the same as the host in the referrer header.
     - The time interval in the Retry-After header can only be specified in seconds, with a minimum of 10 seconds and a maximum of 10 minutes.
 2. Clients invoke the URI specified in the Location header using the GET verb.
 3. Clients should wait for the Retry-After interval, if it was specified, or the default of 60 seconds if it was not, before polling again.
@@ -118,25 +118,24 @@ The asynchronous operation APIs frequently use the 202 Accepted status code and 
 6. If the operation is not complete after maximum time, clients will give up and treat the operation as timed out.
 7. If the 202 was returned in response to resource creation, the resource should \*not\* be visible until the async operation completes (i.e. GETs on the resource should return 404 and collection requests should not include the resource). If the resource should be visible, the provisioningState pattern should be used.
 
-The Uri for the Location header can be either underneath a subscription level operations URL:
+The Uri for the Location header can be either underneath a subscription level operations URI:
 
-Examples:
-https://&lt;endpoint&gt;/subscriptions/{subscriptionId}/providers/{namespace}/locations/westus/operationResults/{operationId}?api-version={api-version} <br/>
+`https://<endpoint>/subscriptions/{subscriptionId}/providers/{namespace}/locations/westus/operationResults/{operationId}?api-version={api-version}`
 
-https://&lt;endpoint&gt;/subscriptions/{subscriptionId}/providers/{namespace}/operationResults/{operationId}?api-version={api-version}
+`https://<endpoint>/subscriptions/{subscriptionId}/providers/{namespace}/operationResults/{operationId}?api-version={api-version}`
 
 or underneath the resource on which the operation was invoked:
 
-Examples:
-https://&lt;endpoint&gt;/subscriptions/{subscriptionId}/providers/{namespace}/{resourceType}/{resourceName}/operationResults/{operationId}?api-version={api-version} <br/>
+`https://<endpoint>/subscriptions/{subscriptionId}/providers/{namespace}/{resourceType}/{resourceName}/operationResults/{operationId}?api-version={api-version}`
 
-https://&lt;endpoint&gt;/subscriptions/{subscriptionId}/providers/{namespace}/{resourceType}/{resourceName}/{childResourceType}/{childResourceName}/operationResults/{operationId}?api-version={api-version}
+`https://<endpoint>/subscriptions/{subscriptionId}/providers/{namespace}/{resourceType}/{resourceName}/{childResourceType}/{childResourceName}/operationResults/{operationId}?api-version={api-version}`
 
-The _endpoint_ can be determined by the hostname of the URI in the _referer_ header.
+The _endpoint_ must be determined by the hostname of the URI in the `referer` header.
 
 Location URI under subscription scope is preferred. If operationResults is exposed under resource scope, then for long running operations like delete, operationResults resource will not be accessible when the resource gets deleted.
 
-### Example flow ###
+### Example flow
+
 | Clients | Resource Provider |
 | --- | --- |
 | DELETE /…/subscriptions/sub1/providers/Microsoft.Test/tests/test1 |   |
@@ -148,26 +147,29 @@ Location URI under subscription scope is preferred. If operationResults is expos
 | GET /…/subscriptions/sub1/providers/Microsoft.Test/operationResults/id1 |     |
 |   | 204 NOCONTENT |
 
-## Azure-AsyncOperation Resource format ##
+## Azure-AsyncOperation Resource format
+
 The operation resource format returned by the Azure-AsyncOperation header is as follows-
 
-    {
-      "id": "/subscriptions/id/locations/westus/operationsStatuses/sameguid",
-      "name": "sameguid",
-      "status" : "RP defined values | Succeeded | Failed | Canceled",
-      "startTime": "<DateLiteral per ISO8601>",
-      "endTime": "<DateLiteral per ISO8601>",
-      "percentComplete": <double between 0 and 100>
-      "properties": {
-        /\* The resource provider can choose the values here, but it should only be
-            returned on a successful operation (status being "Succeeded"). \*/
-      },
-      "error" : {
-        /\* RP must return the *code* and *messages* fields. Please use the schema for the "ErrorResponse" Type from the Common Types definition in the Azure Rest API Specifications [repository](https://github.com/Azure/azure-rest-api-specs/blob/master/specification/common-types/resource-management/v2/types.json) \*/
-        "code": "BadArgument",
-        "message": "The provided database &#39;foo&#39; has an invalid username."
-      }
-    }
+```json
+{
+  "id": "/subscriptions/id/locations/westus/operationsStatuses/sameguid",
+  "name": "sameguid",
+  "status" : "RP defined values | Succeeded | Failed | Canceled",
+  "startTime": "<DateLiteral per ISO8601>",
+  "endTime": "<DateLiteral per ISO8601>",
+  "percentComplete": 0.0, // <double between 0 and 100>
+  "properties": {
+    /* The resource provider can choose the values here, but it should only be
+        returned on a successful operation (status being "Succeeded"). */
+  },
+  "error" : {
+    /* RP must return the *code* and *messages* fields. Please use the schema for the "ErrorResponse" Type from the Common Types definition in the Azure Rest API Specifications repository: https://github.com/Azure/azure-rest-api-specs/blob/master/specification/common-types/resource-management/v3/types.json */
+    "code": "BadArgument",
+    "message": "The provided database 'foo' has an invalid username."
+  }
+}
+```
 
 **The operation resource should be used for Azure-AsyncOperation header**. Location header should have different behavior described above.
 
@@ -179,23 +181,35 @@ If the response status code is a 4xx or 5xx value, it indicates a failure in rea
 
 | Element name | Description |
 | --- | --- |
-| id | **Optional.** (but recommended). It should match what is used to GET the operation resource. |
-| name | **Optional.** (but recommended). It must match the last segment of the &quot;id&quot; field, and will typically be a GUID / system generated value. |
-| status | **Required.** … |
-| properties | **Optional** Like the properites envelope for resources, the resource provider can choose the values here. However, it should only be set if the status is Succeeded. |
-| error | **Required if status == failed or status == canceled.** This is the OData v4 error format, used by the RPC and will go into the v2.2 Azure REST API guidelines.  The full set of optional properties (e.g. inner errors / details) can be found in the &quot;Error Response&quot; section. |
-| error.code | **Required if status == failed or status == canceled.**  If status == failed, provide an invariant error code used for error troubleshooting, aggregation, and analysis. |
-| error.message | **Required if status == failed.**   **Localized.**  If status == failed, provide an actionable error message indicating what error occurred, and what the user can do to address the issue. |
-| startTime | **Optional.**  DateLiteral using ISO8601, per 1API guidelines. |
-| endTime | **Optional.**  DateLiteral using ISO8601, per 1API guidelines. |
-| percentComplete | **Optional.**  Double between 0 and 100. |
+| `id` | **Optional.** (but recommended). It should match what is used to GET the operation resource. |
+| `name` | **Optional.** (but recommended). It must match the last segment of the &quot;id&quot; field, and will typically be a GUID / system generated value. |
+| `status` | **Required.** … |
+| `properties` | **Optional** Like the properites envelope for resources, the resource provider can choose the values here. However, it should only be set if the status is Succeeded. |
+| `error` | **Required if status == failed or status == canceled.** This is the OData v4 error format, used by the RPC and will go into the v2.2 Azure REST API guidelines.  The full set of optional properties (e.g. inner errors / details) can be found in the &quot;Error Response&quot; section. |
+| `error.code` | **Required if status == failed or status == canceled.**  If status == failed, provide an invariant error code used for error troubleshooting, aggregation, and analysis. |
+| `error.message` | **Required if status == failed.**   **Localized.**  If status == failed, provide an actionable error message indicating what error occurred, and what the user can do to address the issue. |
+| `startTime` | **Optional.**  DateLiteral using ISO8601, per 1API guidelines. |
+| `endTime` | **Optional.**  DateLiteral using ISO8601, per 1API guidelines. |
+| `percentComplete` | **Optional.**  Double between 0 and 100. |
 
-## Long running operations running more than a day ##
+## Operation result rules
+
+Operation results, via both the `location` and `azure-asyncoperation` patterns expose details about the operation that was performed via a different API. `operationResults` and `operationsStatuses` APIs typically have different RBAC restrictions that the original action that initiated the async operation. The following rules should be followed when implementing async operation polling APIs:
+
+1. The resource provider **must** ensure the operation result API is being called in the same tenant and subscription that the operation originated in.
+2. If the operation ID does not exist in the tenant and/or subscription the resource provider should return a `404` response.
+3. The resource provider should use an operation ID (the last segment in the `operationResults` and `operationsStatuses` URIs) that is not exposed via other means. For example, the operation ID should not be the same as the correlation ID or request ID.
+4. The resource provider should validate the identity retrieving the operation result is the same identity that triggered the operation. This can be accomplished by inspecting the identity related [common headers](../common-api-details.md#proxy-request-header-modifications). For example, compare `x-ms-home-tenant-id` and `x-ms-client-object-id` (falling back to `x-ms-client-puid` if object ID is not available).
+   - Alternative approaches can be used for async operation scenarios where the operation is expected to be polled by multiple identities. These approaches would be scenario specific depending on the operation and what identities are expected to retrieve the results.
+
+## Long running operations running more than a day
 
 Some long running operations may take more than a day to complete. In addition to following the above mentioned async guidelines, Resource Providers can choose to expose a new proxy resource for retrieving the status of the operation. If the long running operation is initiated from a client like Portal, the Location or Azure-AsyncOperation URI will be lost if user closes the portal. Client can do a GET on the proxy resource to retrieve the latest status of the operation anytime.
 
 For example, execute tests is a long running operation taking more than a day
-POST /…/subscriptions/subId/resourceGroups/rgId/providers/Microsoft.Test/scenarioTests/test1/execute
+
+`POST /…/subscriptions/subId/resourceGroups/rgId/providers/Microsoft.Test/scenarioTests/test1/execute`
 
 The latest test execution status is retrieved doing GET on the testExecutionResults proxy resource
-GET /…/subscriptions/subId/resourceGroups/rgId/providers/Microsoft.Test/scenarioTests/test1/testExecutionResults/latest
+
+`GET /…/subscriptions/subId/resourceGroups/rgId/providers/Microsoft.Test/scenarioTests/test1/testExecutionResults/latest`
